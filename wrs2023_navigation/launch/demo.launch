@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="run_demo" default="true"/>
+  <arg name="test_mode" default="false"/>
+
+  <!-- manin controller -->
+  <arg name="robot_model" default="typef"/>
+  <include file="$(find seed_r7_bringup)/launch/seed_r7_bringup.launch">
+    <arg name="robot_model" value="$(arg robot_model)"/>
+  </include>
+
+  <!-- Navigation Stack -->
+  <include file="$(find seed_r7_navigation)/launch/wheel_with_dummy.launch" />
+
+  <!-- MoveIt! -->
+  <include file="$(find seed_r7_moveit_config)/../seed_r7_$(arg robot_model)_moveit_config/launch/move_group.launch" />
+
+  <!-- demo program -->
+  <group unless="$(arg test_mode)">
+    <node pkg="wrs2023_navigation" name="scenario_node" type="navigation.py" output="screen" if="$(arg run_demo)"
+          launch-prefix="gnome-terminal --" />
+  </group>
+
+  <group unless="$(arg test_mode)">
+    <!-- RViz -->
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find wrs2023_navigation)/config/rviz.rviz" required="true" />
+    <!-- smach_viewer -->
+    <node name="smach_viewer" pkg="smach_viewer" type="smach_viewer.py" />
+  </group>
+
+</launch>

@@ -1,0 +1,90 @@
+- pose:
+    position:
+        x: 0.0
+        y: 0.0
+        z: 0
+    orientation:
+        x: 0
+        y: 0
+        z: 0
+        w: 1
+- pose:
+    position:
+        x: 1.7
+        y: -2.0
+        z: 0
+    orientation:
+        x: 0
+        y: 0
+        z: -0.301
+        w: 0.954
+# - pose:
+#     position:
+#         x: 2.2
+#         y: -1.0
+#         z: 0
+#     orientation:
+#         x: 0
+#         y: 0
+#         z: -0.5
+#         w: 0.866  
+# - pose:
+#     position:
+#         x: 4.5
+#         y: -1.3
+#         z: 0
+#     orientation:
+#         x: 0
+#         y: 0
+#         z: 0
+#         w: 1
+# - pose:
+#     position:
+#         x: 3.0
+#         y: -1.0
+#         z: 0
+#     orientation:
+#         x: 0
+#         y: 0
+#         z: 0.256
+#         w: 0.996
+# - pose:
+#     position:
+#         x: 2.0
+#         y: 0
+#         z: 0
+#     orientation:
+#         x: 0
+#         y: 0
+#         z: 0.256
+#         w: 0.996
+# - pose:
+#     position:
+#         x: 3.52677
+#         y: -4.90805
+#         z: 0
+#     orientation:
+#         x: 0
+#         y: 0
+#         z: 0.0306916
+#         w: 0.999529
+# - pose:
+#     position:
+#         x: -2.83833
+#         y: 4.02377
+#         z: 0
+#     orientation:
+#         x: 0
+#         y: 0
+#         z: 0.999953
+#         w: 0.0096805
+# - pose:
+#     position:
+#         x: 4.53696
+#         y: 5.26492
+#         z: 0
+#     orientation:
+#         x: -0
+#         y: -0
+#         z: 0.0389752
+#         w: 0.99924
