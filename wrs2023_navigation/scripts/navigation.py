@@ -23,6 +23,10 @@ import geometry_msgs.msg
 ##-- for hand control
 from seed_r7_ros_controller.srv import*
 from time import sleep
+import numpy as np
+
+
+object_position = [0, 0, 0]
 
 
 ###########################################
@@ -104,6 +108,25 @@ class HandController:
         rospy.logerr('Service call failed: {}'.format(e))
         return False
 
+  ############################################################################################
+  def grasp_left(self):
+    try:
+        service = rospy.ServiceProxy('/seed_r7_ros_controller/hand_control', HandControl)
+        response = service(1,'grasp',100)
+        return True
+    except rospy.ServiceException as e:
+        rospy.logerr('Service call failed: {}'.format(e))
+        return False
+
+  def release_left(self):
+    try:
+        service = rospy.ServiceProxy('/seed_r7_ros_controller/hand_control', HandControl)
+        response = service(1,'release',100)
+        return True
+    except rospy.ServiceException as e:
+        rospy.logerr('Service call failed: {}'.format(e))
+        return False
+  ############################################################################################
 ###########################################
 class MoveitCommand:
   def __init__(self):
@@ -118,7 +141,8 @@ class MoveitCommand:
     self.box3 = self.box_pose(0.8,0,1.16)
 
     # Custom
-    self.box4 = self.box_pose(0.8,0,0.77)
+    self.box4 = self.box_pose(0.7,-0.2,0.77)
+    self.box5 = self.box_pose(0.7,0.2,0.77)
 
     self.robot_model = rospy.get_param("/seed_r7_ros_controller/robot_model_plugin")
 
@@ -134,6 +158,43 @@ class MoveitCommand:
       quat = tf.transformations.quaternion_from_euler(0,0,0)
     elif(direction == "top"): 
       self.group.set_end_effector_link("r_eef_pick_link")
+      quat = tf.transformations.quaternion_from_euler(-1.57,0.79,0)
+
+    target_pose.orientation.x = quat[0]
+    target_pose.orientation.y = quat[1]
+    target_pose.orientation.z = quat[2]
+    target_pose.orientation.w = quat[3]
+
+    target_pose.position.x = x
+    target_pose.position.y = y
+    target_pose.position.z = z
+
+    self.group.set_pose_target(target_pose)
+    self.group.set_max_velocity_scaling_factor(vel)
+    plan = self.group.plan()
+    if type(plan) is tuple: # for noetic
+        plan = plan[1]
+
+    if(len(plan.joint_trajectory.points)==0):
+      rospy.logwarn("IK can't be solved")
+      self.group.clear_pose_targets()
+      return 'aborted'
+    else: 
+      self.group.execute(plan)
+      return 'succeeded'
+    
+  def set_grasp_position_left(self, x, y, z, vel=1.0,direction="side"):
+    self.group = moveit_commander.MoveGroupCommander("larm_with_torso")
+    self.group.set_pose_reference_frame("base_link")
+    self.group.set_planner_id( "RRTConnectkConfigDefault" )
+    self.group.allow_replanning( True )
+
+    target_pose = Pose()
+    if(direction == "side"):
+      self.group.set_end_effector_link("l_eef_grasp_link")
+      quat = tf.transformations.quaternion_from_euler(0,0,0)
+    elif(direction == "top"): 
+      self.group.set_end_effector_link("l_eef_pick_link")
       quat = tf.transformations.quaternion_from_euler(-1.57,0.79,0)
 
     target_pose.orientation.x = quat[0]
@@ -276,6 +337,27 @@ class MoveitCommand:
     self.scene.remove_attached_object(eef_link, name=object_name)
 
     return self.wait_for_state_update(object_name,box_is_known=True, box_is_attached=False, timeout=4)
+  
+###############################################################################################################
+
+  def attach_objects_left(self,object_name):
+    self.group.set_end_effector_link("l_eef_pick_link")
+    eef_link = self.group.get_end_effector_link()
+    grasping_group = 'lhand'
+    touch_links = self.robot.get_link_names(group=grasping_group)
+    self.scene.attach_box(eef_link, object_name, touch_links=touch_links)
+
+    return self.wait_for_state_update(object_name,box_is_attached=True, box_is_known=False, timeout=4)
+
+  def detach_objects_left(self, object_name):
+    self.group.set_end_effector_link("l_eef_pick_link")
+    eef_link = self.group.get_end_effector_link()
+
+    self.scene.remove_attached_object(eef_link, name=object_name)
+
+    return self.wait_for_state_update(object_name,box_is_known=True, box_is_attached=False, timeout=4)
+
+###############################################################################################################
 
 #---------------------------------
 class MANIPULATE(State):
@@ -292,6 +374,49 @@ class MANIPULATE(State):
     if(mc.set_grasp_position(self.x,self.y,self.z,self.vel,self.direction) 
       == 'succeeded'):return 'succeeded'
     else: return 'aborted'
+
+#---------------------------------
+
+#---------------------------------
+
+###############################################################################################################
+class MANIPULATELEFT(State):
+  def __init__(self,x,y,z,vel=1.0,direction="side"):
+    State.__init__(self, outcomes=['succeeded','aborted'])
+    self.x = x
+    self.y = y
+    self.z = z
+    self.vel = vel
+    self.direction = direction
+
+  def execute(self, userdata):
+    rospy.loginfo('Manipulate Left arm at ({},{},{}) in scale velocity {}'.format(self.x,self.y,self.z,self.vel))
+    if(mc.set_grasp_position_left(self.x,self.y,self.z,self.vel,self.direction) 
+      == 'succeeded'):return 'succeeded'
+    else: return 'aborted'
+
+class MANIPULATE_RIGH_LEFT(State):
+  def __init__(self,x1,y1,z1,x2,y2,z2,vel=1.0,direction="side"):
+    State.__init__(self, outcomes=['succeeded','aborted'])
+    self.x1 = x1
+    self.y1 = y1
+    self.z1 = z1
+
+    self.x2 = x2
+    self.y2 = y2
+    self.z2 = z2
+
+    self.vel = vel
+    self.direction = direction
+
+  def execute(self, userdata):
+    rospy.loginfo('Manipulate Right and Left arm at ({},{},{}) ({},{},{}) in scale velocity {}'.format(self.x1,self.y1,self.z1,self.x2,self.y2,self.z2,self.vel))
+    if(mc.set_grasp_position(self.x1,self.y1,self.z1,self.vel,self.direction) and mc.set_grasp_position_left(self.x2,self.y2,self.z2,self.vel,self.direction) 
+      == 'succeeded'):
+      return 'succeeded'
+    else: return 'aborted'
+
+###############################################################################################################
 
 #---------------------------------
 class MOVE_LIFTER(State):
@@ -354,6 +479,32 @@ class PLACE(State):
       else: return 'aborted'
     else: return 'aborted'
 
+#############################################################################
+
+class PICKLEFT(State):
+  def __init__(self,object_name):
+    State.__init__(self, outcomes=['succeeded','aborted'])
+    self.object_name = object_name
+
+  def execute(self, userdata):
+    if(mc.attach_objects_left(self.object_name) == 'succeeded'):
+      if(hc.grasp_left()): return 'succeeded'
+      else: return 'aborted'
+    else: return 'aborted'
+
+class PLACELEFT(State):
+  def __init__(self,object_name):
+    State.__init__(self, outcomes=['succeeded','aborted'])
+    self.object_name = object_name
+
+  def execute(self, userdata):
+    if(mc.detach_objects_left(self.object_name) == 'succeeded'):
+      if(hc.release_left()): return 'succeeded'
+      else: return 'aborted'
+    else: return 'aborted'
+
+#############################################################################
+
 class MONITORING(State):
   def __init__(self, threshold):
     State.__init__(self, outcomes=['succeeded', 'aborted'])
@@ -371,7 +522,6 @@ class MONITORING(State):
         break 
 
     return 'succeeded'
-
 
 # class WAITING(State):
 #   def __init__(self, timeout):
@@ -393,6 +543,9 @@ class MONITORING(State):
 #     # else: return 'aborted'
 
 class WAITING(State):
+  #Check NFC reader, 
+  # if the reader get NFC data, it will return 1
+  # then, it will wait until the object is detached and return 100 
   def __init__(self,delay):
     State.__init__(self, outcomes=['succeeded', 'aborted'])
     self.delay = delay
@@ -403,23 +556,44 @@ class WAITING(State):
     return 'succeeded' 
     # else: return 'aborted'
 
-# class PAYMENT(State):
-#   def __init__(self):
-#     State.__init__(self, outcomes=['succeeded', 'aborted'])
-#     self.subscriber = rospy.Subscriber('nfc_checker', Int8, self.callback)
-#     self.flag_payment = 0
+class PAYMENT(State):
+  def __init__(self):
+    State.__init__(self, outcomes=['succeeded', 'aborted'])
+    self.subscriber = rospy.Subscriber('nfc_checker', Int8, self.callback)
+    self.flag_payment = 0
 
-#   def callback(self, data):
-#     self.flag_payment = data
-#     # rospy.loginfo("f")
+  def callback(self, data):
+    self.flag_payment = data.data
+    # rospy.loginfo("Flag payment: %d", self.flag_payment)
 
-#   def execute(self, userdata):
-#     while True:
-#       if flag_payment == 100:
-#         break
-
-#     return 'succeeded'
+  def execute(self, userdata):
+    rospy.loginfo('initialize payment')
+    while not (self.flag_payment == 100):
+      rospy.loginfo("NFC is not 100")
+    else:
+      return 'succeeded'
+    
+class GETOBJECT(State):
+  #This class will get the object position,
   
+  def __init__(self):
+    State.__init__(self, outcomes=['succeeded','aborted'])
+    self.subscriber = rospy.Subscriber('object_detection', PoseStamped, self.callback)
+
+  def callback(self, data):
+    object_position[0] = data.pose.position.x
+    object_position[1] = data.pose.position.y
+    object_position[2] = data.pose.position.z
+    rospy.loginfo("Position x: %d, y: %d, depth: %d", object_position[0], object_position[1], object_position[2])
+
+  def execute(self, userdata):
+    while True:
+      continue
+      # rospy.loginfo("A")
+      # rospy.loginfo("Position x: %d, y: %d, depth: %d", object_position[0], object_position[1], object_position[2])
+
+    return 'succeeded'
+    
 
     
 #==================================
@@ -449,7 +623,6 @@ if __name__ == '__main__':
   with lifter_up:
     StateMachine.add('UP LIFTER', MOVE_LIFTER(0,0.9),\
       transitions={'succeeded':'succeeded','aborted':'aborted'})
-  
 
   lifter_down = StateMachine(outcomes=['succeeded','aborted'])
   with lifter_down:
@@ -478,15 +651,15 @@ if __name__ == '__main__':
     StateMachine.add('DELAY2S', WAITING(2),\
       transitions={'succeeded':'succeeded', 'aborted':'aborted'})
   
-  monitoring_crowd = StateMachine(outcomes=['succeeded', 'aborted'])
-  with monitoring_crowd:
-    StateMachine.add('MONITORING', MONITORING(4),\
-      transitions={'succeeded': 'succeeded', 'aborted':'aborted'})
+  # monitoring_crowd = StateMachine(outcomes=['succeeded', 'aborted'])
+  # with monitoring_crowd:
+  #   StateMachine.add('MONITORING', MONITORING(4),\
+  #     transitions={'succeeded': 'succeeded', 'aborted':'aborted'})
   
-  monitoring_nocrowd = StateMachine(outcomes=['succeeded', 'aborted'])
-  with monitoring_crowd:
-    StateMachine.add('MONITORING', MONITORING(1),\
-      transitions={'succeeded': 'succeeded', 'aborted':'aborted'})
+  # monitoring_nocrowd = StateMachine(outcomes=['succeeded', 'aborted'])
+  # with monitoring_crowd:
+  #   StateMachine.add('MONITORING', MONITORING(1),\
+  #     transitions={'succeeded': 'succeeded', 'aborted':'aborted'})
 
   pick_place_1 = StateMachine(outcomes=['succeeded','aborted'])
   x = mc.box1.pose.position.x
@@ -530,36 +703,106 @@ if __name__ == '__main__':
     StateMachine.add('PLACE', PLACE('box3'),\
       transitions={'succeeded':'succeeded','aborted':'aborted'})
     
+  # pick_place_4 = StateMachine(outcomes=['succeeded','aborted'])
+  # x = mc.box4.pose.position.x
+  # y = mc.box4.pose.position.y
+  # z = mc.box4.pose.position.z
+  # with pick_place_4:
+  #   StateMachine.add('PICK MOTION', MANIPULATE(x, y, z), \
+  #     transitions={'succeeded':'PICK','aborted':'aborted'})
+  #   StateMachine.add('PICK', PICK('box4'),\
+  #     transitions={'succeeded':'DELAY2S','aborted':'aborted'})
+  #   StateMachine.add('DELAY2S', delay_2s,\
+  #     transitions={'succeeded':'CARRY','aborted':'aborted'})
+  #   StateMachine.add('CARRY', MANIPULATE(0.4, -0.2, z + 0.2), \
+  #     transitions={'succeeded':'GO TO WAIT','aborted':'aborted'})  
+  #   StateMachine.add('GO TO WAIT', go_to_wait,\
+  #     transitions={'succeeded':'PLACE MOTION','aborted':'aborted'})
+  #   StateMachine.add('PLACE MOTION', MANIPULATE(0.8, 0, z), \
+  #     transitions={'succeeded':'PLACE','aborted':'aborted'})  
+  #   StateMachine.add('PLACE', PLACE('box4'),\
+  #     transitions={'succeeded':'succeeded','aborted':'aborted'})
+
+  # pick_place_4 = StateMachine(outcomes=['succeeded','aborted'])
+  # x = mc.box4.pose.position.x
+  # y = mc.box4.pose.position.y
+  # z = mc.box4.pose.position.z
+  # with pick_place_4:
+  #   StateMachine.add('PICK MOTION', MANIPULATELEFT(x, y, z), \
+  #     transitions={'succeeded':'PICK','aborted':'aborted'})
+  #   StateMachine.add('PICK', PICKLEFT('box4'),\
+  #     transitions={'succeeded':'DELAY2S','aborted':'aborted'})
+  #   StateMachine.add('DELAY2S', delay_2s,\
+  #     transitions={'succeeded':'CARRY','aborted':'aborted'})
+  #   StateMachine.add('CARRY', MANIPULATELEFT(0.4, -0.2, z + 0.2), \
+  #     transitions={'succeeded':'GO TO WAIT','aborted':'aborted'})  
+  #   StateMachine.add('GO TO WAIT', go_to_wait,\
+  #     transitions={'succeeded':'PLACE MOTION','aborted':'aborted'})
+  #   StateMachine.add('PLACE MOTION', MANIPULATELEFT(0.8, 0, z), \
+  #     transitions={'succeeded':'PLACE','aborted':'aborted'})  
+  #   StateMachine.add('PLACE', PLACELEFT('box4'),\
+  #     transitions={'succeeded':'succeeded','aborted':'aborted'})
+
   pick_place_4 = StateMachine(outcomes=['succeeded','aborted'])
-  x = mc.box4.pose.position.x
-  y = mc.box4.pose.position.y
-  z = mc.box4.pose.position.z
+  x1 = mc.box4.pose.position.x
+  y1 = mc.box4.pose.position.y
+  z1 = mc.box4.pose.position.z
+
+  x2 = mc.box5.pose.position.x
+  y2 = mc.box5.pose.position.y
+  z2 = mc.box5.pose.position.z
+
   with pick_place_4:
-    StateMachine.add('PICK MOTION', MANIPULATE(x, y, z), \
+    StateMachine.add('PICK MOTION', MANIPULATE_RIGH_LEFT(x1, y1, z1, x2, y2, z2), \
       transitions={'succeeded':'PICK','aborted':'aborted'})
-    StateMachine.add('PICK', PICK('box4'),\
+    StateMachine.add('PICK', PICKLEFT('box4'),\
       transitions={'succeeded':'DELAY2S','aborted':'aborted'})
     StateMachine.add('DELAY2S', delay_2s,\
       transitions={'succeeded':'CARRY','aborted':'aborted'})
-    StateMachine.add('CARRY', MANIPULATE(0.4, -0.2, z + 0.2), \
+    StateMachine.add('CARRY', MANIPULATELEFT(0.4, -0.2, z + 0.2), \
       transitions={'succeeded':'GO TO WAIT','aborted':'aborted'})  
     StateMachine.add('GO TO WAIT', go_to_wait,\
       transitions={'succeeded':'PLACE MOTION','aborted':'aborted'})
-    StateMachine.add('PLACE MOTION', MANIPULATE(0.8, 0, z), \
+    StateMachine.add('PLACE MOTION', MANIPULATELEFT(0.8, 0, z), \
       transitions={'succeeded':'PLACE','aborted':'aborted'})  
-    StateMachine.add('PLACE', PLACE('box4'),\
+    StateMachine.add('PLACE', PLACELEFT('box4'),\
       transitions={'succeeded':'succeeded','aborted':'aborted'})
+
 
   scenario_play = StateMachine(outcomes=['succeeded','aborted'])
   with scenario_play:
 
+    # StateMachine.add('GO TO START POINT', go_to_start_point,\
+    #   transitions={'succeeded':'GO TO SHELF','aborted':'aborted'})
+    
+    # StateMachine.add('MONITORING CROWD', MONITORING(2),\
+    #   transitions={'succeeded': 'GO TO SHELF', 'aborted':'aborted'})
 
-    StateMachine.add('GO TO START POINT', go_to_start_point,\
-      transitions={'succeeded':'GO TO SHELF','aborted':'aborted'})
+    # StateMachine.add('GO TO SHELF', go_to_shelf,\
+    #   transitions={'succeeded':'succeeded','aborted':'aborted'})
     
-    StateMachine.add('GO TO SHELF', go_to_shelf,\
-      transitions={'succeeded':'succeeded,'aborted':'aborted'})
-    
+    # StateMachine.add('MONITORING NO CROWD', MONITORING(-1),\
+    #   transitions={'succeeded': 'GO TO START POINT', 'aborted':'aborted'})
+
+    # StateMachine.add('INITIALIZE', INIT_POSE(),\
+    #   transitions={'succeeded':'LIFTER UP','aborted':'aborted'})
+
+    # StateMachine.add('PAYMENT', PAYMENT(),\
+    #    transitions={'succeeded':'LIFTER UP', 'aborted':'aborted'})
+    # StateMachine.add('LIFTER UP', lifter_up,\
+    #    transitions={'succeeded':'ADD OBJECTS','aborted':'aborted'})
+    # StateMachine.add('ADD OBJECTS', UPDATE_OBJECTS('add'),\
+    #   transitions={'succeeded':'PICK and PLACE 4','aborted':'aborted'})
+    # StateMachine.add('PICK and PLACE 4', pick_place_4,\
+    #    transitions={'succeeded':'INITIALIZE','aborted':'aborted'})
+    # StateMachine.add('INITIALIZE', INIT_POSE(),\
+    #   transitions={'succeeded':'REMOVE OBJECTS','aborted':'aborted'})
+    # StateMachine.add('REMOVE OBJECTS', UPDATE_OBJECTS('remove'),\
+    #   transitions={'succeeded':'succeeded','aborted':'aborted'})
+
+    StateMachine.add('GETOBJECT', GETOBJECT(),\
+        transitions={'succeeded':'succeeded', 'aborted':'aborted'})
+
   sis = smach_ros.IntrospectionServer('server_name',scenario_play,'/SEED-Noid-Mover Scenario Play')
   sis.start()
   scenario_play.execute()
