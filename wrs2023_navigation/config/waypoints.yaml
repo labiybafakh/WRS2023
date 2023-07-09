@@ -1,0 +1,108 @@
+#0 Start
+- pose:
+    position:
+        x: 0.0
+        y: 0.0
+        z: 0
+    orientation:
+        x: 0
+        y: 0
+        z: 0
+        w: 1
+#1 Table 1
+- pose:
+    position:
+        x: 0.7
+        y: -0.3
+        z: 0
+    orientation:
+        x: 0
+        y: 0
+        z: -0.382
+        w: 0.923
+#2 Table 2
+- pose:
+    position:
+        x: 0.37
+        y: -1.35
+        z: 0
+    orientation:
+        x: 0
+        y: 0
+        z: 1
+        w: 0
+#3 Shelf 1
+- pose:
+    position:
+        x: 2.7
+        y: -0.5
+        z: 0
+    orientation:
+        x: 0
+        y: 0
+        z: -0.382
+        w: 0.923
+#4 Shelf 2
+- pose:
+    position:
+        x: 2.6
+        y: -3.05
+        z: 0
+    orientation:
+        x: 0
+        y: 0
+        z: 1
+        w: 0
+#5 Shelf 3
+- pose:
+    position:
+        x: 1.85
+        y: -3.05
+        z: 0
+    orientation:
+        x: 0
+        y: 0
+        z: -0.7
+        w: -0.7
+#6 Shelf 3
+- pose:
+    position:
+        x: 0.85
+        y: -3.05
+        z: 0
+    orientation:
+        x: 0
+        y: 0
+        z: 1
+        w: 0
+
+# - pose:
+#     position:
+#         x: 3.52677
+#         y: -4.90805
+#         z: 0
+#     orientation:
+#         x: 0
+#         y: 0
+#         z: 0.0306916
+#         w: 0.999529
+# - pose:
+#     position:
+#         x: -2.83833
+#         y: 4.02377
+#         z: 0
+#     orientation:
+#         x: 0
+#         y: 0
+#         z: 0.999953
+#         w: 0.0096805
+# - pose:
+#     position:
+#         x: 4.53696
+#         y: 5.26492
+#         z: 0
+#     orientation:
+#         x: -0
+#         y: -0
+#         z: 0.0389752
+#         w: 0.99924
