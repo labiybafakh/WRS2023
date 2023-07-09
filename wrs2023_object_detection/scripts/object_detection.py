@@ -17,23 +17,9 @@ from std_msgs.msg import Int8
 
 numpy.set_printoptions(threshold=sys.maxsize)
 
-# HOST = ''
-# UDP_IP = "192.168.209.33"
-# UDP_PORT = 9001
-
-
-# print("UDP target IP:", UDP_IP)
-# print("UDP target port:", UDP_PORT)
-
 object_flag = 0
 
 sys.path.insert(1, '../')
-
-# os.environ["CUDA_VISIBLE_DEVICES"] = ""
-
-# torch.cuda.is_available = False
-# use_cuda = torch.cuda.is_available()
-# print(torch.version.cuda)
 
 device = torch.device('cpu')
 
@@ -106,8 +92,7 @@ if __name__ == "__main__":
 		# Calculate Multiple Object
 		panjang = len(results.pandas().xyxy[0])
 		converted = results.pandas().xyxy[0].to_numpy()
-		# print("Number of object: " + str(panjang))
-		# print(converted)
+
 
 		# Draw Bounding Box on Object Detected
 		true_tail_point = (0, 0)
@@ -143,20 +128,15 @@ if __name__ == "__main__":
 				cv2.putText(color_image, f'{converted[i][6]} {int(converted[i][4] * 100)}%',
 							(int(converted[i][0]), int(converted[i][1])), cv2.FONT_HERSHEY_SIMPLEX, 0.25, (100, 255, 0), 1)
 				
-				# print(converted[i][6])
-
 				if converted[i][6] == 'caffe latte':
 					countTail += 1
 					coordinates_tail = (converted[i][0], converted[i][2], converted[i][1], converted[i][3])
 					centerx_tail, centery_tail = (numpy.average(coordinates_tail[:2]), numpy.average(coordinates_tail[2:]))
 					true_tail_point = (int(centerx_tail), int(centery_tail))
-					# x_tail_world = (points_map[int(centery_tail), int(centerx_tail), :][0])
-					# y_tail_world = (points_map[int(centery_tail), int(centerx_tail), :][1])
-					# z_tail_world = (points_map[int(centery_tail), int(centerx_tail), :][2])
+
 					x_pos = (points_map[int(centery_tail), int(centerx_tail), :][0])
 					y_pos = (points_map[int(centery_tail), int(centerx_tail), :][1])
 					z_pos = (points_map[int(centery_tail), int(centerx_tail), :][2])
-					# tail_coordinate = (x_tail_world, y_tail_world, z_tail_world)
 
 					object_flag = 1
 
@@ -166,13 +146,10 @@ if __name__ == "__main__":
 					coordinates_head = (converted[i][0], converted[i][2], converted[i][1], converted[i][3])
 					centerx_head, centery_head = (numpy.average(coordinates_head[:2]), numpy.average(coordinates_head[2:]))
 					true_head_point = (int(centerx_head), int(centery_head))
-					# x_head_world = (points_map[int(centery_head), int(centerx_head), :][0])
-					# y_head_world = (points_map[int(centery_head), int(centerx_head), :][1])
-					# z_head_world = (points_map[int(centery_head), int(centerx_head), :][2])
+
 					x_pos = (points_map[int(centery_head), int(centerx_head), :][0])
 					y_pos = (points_map[int(centery_head), int(centerx_head), :][1])
 					z_pos = (points_map[int(centery_head), int(centerx_head), :][2])
-					# head_coordinate = (x_head_world, y_head_world, z_head_world)
 
 					object_flag = 2
 
@@ -180,29 +157,12 @@ if __name__ == "__main__":
 					coordinates_left = (converted[i][0], converted[i][2], converted[i][1], converted[i][3])
 					centerx_left, centery_left = (numpy.average(coordinates_left[:2]), numpy.average(coordinates_left[2:]))
 					true_left_point = (int(centerx_left), int(centery_left))
-					# x_left_world = (points_map[int(centery_left), int(centerx_left), :][0])
-					# y_left_world = (points_map[int(centery_left), int(centerx_left), :][1])
-					# z_left_world = (points_map[int(centery_left), int(centerx_left), :][2])
 					x_pos = (points_map[int(centery_left), int(centerx_left), :][0])
 					y_pos= (points_map[int(centery_left), int(centerx_left), :][1])
 					z_pos = (points_map[int(centery_left), int(centerx_left), :][2])
-					# left_coordinate = (x_left_world, y_left_world, z_left_world)
 
 					object_flag = 3
-
-				# elif converted[i][6] == 'Right Flip':
-				# 	coordinates_right = (converted[i][0], converted[i][2], converted[i][1], converted[i][3])
-				# 	centerx_right, centery_right = (numpy.average(coordinates_right[:2]), numpy.average(coordinates_right[2:]))
-				# 	true_right_point = (int(centerx_right), int(centery_right))
-				# 	x_right_world = (points_map[int(centery_right), int(centerx_right), :][0])
-				# 	y_right_world = (points_map[int(centery_right), int(centerx_right), :][1])
-				# 	z_right_world = (points_map[int(centery_right), int(centerx_right), :][2])
-				# 	right_coordinate = (x_right_world, y_right_world, z_right_world)
-
-
-				else:
-					# object_flag = 0
-					
+				else:					
 					continue
 
 			
@@ -211,16 +171,6 @@ if __name__ == "__main__":
 
 		except Exception as e:
 			print(e)
-
-		# polygon_data = (true_head_point, true_tail_point, true_left_point, true_right_point)
-		# polygon_data = (true_head_point, true_tail_point)
-		# center_centroid = centroid(polygon_data)
-		# centerx_centroid = center_centroid[0]
-		# centery_centroid = center_centroid[1]
-		# x_centroid_world = (points_map[int(centery_centroid), int(centerx_centroid), :][0])
-		# y_centroid_world = (points_map[int(centery_centroid), int(centerx_centroid), :][1])
-		# z_centroid_world = (points_map[int(centery_centroid), int(centerx_centroid), :][2])
-		# centroid_coordinate = (x_centroid_world, y_centroid_world, z_centroid_world)
 		
 		object_flag_msg = Int8()
 		object_flag_msg.data = object_flag
@@ -230,9 +180,6 @@ if __name__ == "__main__":
 		pose_msg = PoseStamped()
 		pose_msg.header.frame_id	= "object"
 		pose_msg.header.stamp		= rospy.Time.now()
-		# pose_msg.pose.position.x 	= x_centroid_world
-		# pose_msg.pose.position.y	= y_centroid_world
-		# pose_msg.pose.position.z	= z_centroid_world
 
 		pose_msg.pose.position.x 	= z_pos
 		pose_msg.pose.position.y	= -x_pos
@@ -244,17 +191,6 @@ if __name__ == "__main__":
 		pose_msg.pose.orientation.w = 1
 
 		_publisher.publish(pose_msg)
-
-		# try:
-		# 	color_image = cv2.arrowedLine(color_image, true_tail_point, true_head_point, (0, 0, 255), 2)
-		# 	color_image = cv2.circle(color_image, center_centroid, radius=2, color=(255, 100, 0), thickness=2)
-
-		# 	distance_head_tail = math.sqrt((int(x_head_world) - int(x_tail_world)) * (int(x_head_world) - int(x_tail_world)) + ((int(y_head_world) - int(y_tail_world)) * (int(y_head_world) - int(y_tail_world))) + ((int(z_head_world) - int(z_tail_world)) * (int(z_head_world) - int(z_tail_world))))
-
-
-		# except Exception as e:
-		# 	print(e)
-		# 	# print("an exception occured")
 
 
 		# Overlay body segmentation on depth image
