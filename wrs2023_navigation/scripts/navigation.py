@@ -403,8 +403,18 @@ class MANIPULATE(State):
   def execute(self, userdata):
     global object_position_x, object_position_y, object_position_z
 
+    # self.x = ((object_position_x) / 1000 ) + self.x_place
+    # self.y = ((object_position_y) / 1000 ) + self.y_place
+    # #self.z = ((-110 + 1230) + object_position_z) / 1000
+    # self.z = ((-250 + object_position_z) / 1000 ) + self.z_place
+
+    # self.x = 0.18 + (math.cos(0.524) * self.x + math.sin(0.524) * self.z)
+    # self.y = -0.08 + self.y
+    # self.z = 1.360 + (-math.sin(0.524) * self.x + math.cos(0.524) * self.z)
+
     self.x = (mc.pringles.pose.position.x) / 1000 
     self.y = (mc.pringles.pose.position.y) / 1000 
+    #self.z = ((-110 + 1230) + object_position_z) / 1000
     self.z = (mc.pringles.pose.position.z) / 1000 
 
     self.x = (0.08 + (math.cos(0.506) * self.x + math.sin(0.506) * self.z)) + self.x_place
@@ -412,12 +422,17 @@ class MANIPULATE(State):
     self.z = (1.075 + (-math.sin(0.506) * self.x + math.cos(0.506) * self.z)) + self.z_place
 
 
+    # self.x = -self.x * math.sin(-0.523)
+    # self.y = self.y
+    # self.z = 1.230-self.x * math.cos(-0.523)
+
     
     #rospy.loginfo('Manipulate at ({},{},{}) in scale Pos {}'.format(mc.pringles.pose.position.x,mc.pringles.pose.position.y,mc.pringles.pose.position.z,self.vel))
     rospy.loginfo('Manipulate at ({},{},{}) in scale Pos {}'.format(self.x,self.y,self.z,self.vel))
 
     sleep(3)
 
+    # rospy.loginfo('Manipulate at ({},{},{}) in scale velocity {}'.format(self.x,self.y,self.z,self.vel))
     if(mc.set_grasp_position(self.x,self.y,self.z,self.vel,self.direction) 
       == 'succeeded'):return 'succeeded'
     else: return 'aborted'
@@ -446,12 +461,12 @@ class MANIPULATE_MANUAL(State):
       rospy.loginfo("PLACE OBJECT PRINGLES")
       self.x = 0.7 + self.x_place 
       self.y = -0.2 + self.y_place 
-      self.z = 1.15 + self.z_place 
+      self.z = 1.10 + self.z_place 
     else:
       rospy.loginfo("PLACE OBJECT COFFEE LATTE")
       self.x = 0.7 + self.x_place 
       self.y = 0.2 + self.y_place 
-      self.z = 1.15 + self.z_place 
+      self.z = 1.10 + self.z_place 
 
     rospy.loginfo('Manipulate Manual Target arm at ({},{},{}) in scale velocity {}'.format(self.x,self.y,self.z,self.vel))
     if(mc.set_grasp_position(self.x,self.y,self.z,self.vel,self.direction) 
@@ -602,6 +617,25 @@ class MONITORING(State):
 
     return 'succeeded'
 
+# class WAITING(State):
+#   def __init__(self, timeout):
+#     State.__init__(self, outcomes=['succeeded', 'preempted'])
+#     self.current_time = rospy.get_rostime().from_seconds()
+#     self.timeout = rospy.get_rostime().from_seconds()
+  
+#   def execute(self, userdata):
+#     self.current_time = rospy.get_rostime().from_seconds()
+#     self.timeout = self.current_time + userdata*1000
+  
+#     while(self.timeout > 0):
+#       rospy.sleep(self.timeout)
+#       if self.preempt_requested():
+#         self.service_preempt()
+#         rospy.loginfo('Sleep')
+#         return 'preemted'
+#     return 'succeeded'
+#     # else: return 'aborted'
+
 class WAITING(State):
   #Check NFC reader, 
   # if the reader get NFC data, it will return 1
@@ -636,6 +670,14 @@ class PAYMENT(State):
     
     self.flag_payment = 0
     return 'succeeded'
+    
+# class MOVEHEAD(State):
+#   def __init__(self, position):
+#     State.__init__(self, outcomes=['succeeded','aborted'])
+
+
+#   def execute(self, userdata):
+#     return super().execute(ud
 
 
     
@@ -670,9 +712,16 @@ class GETOBJECT(State):
 
     while self.i < 20:      
       self.i += 1
-    
+      
+      # mc.pringles = mc.box_pose(object_position_x,object_position_y,object_position_z)
+      #mc.pringles = mc.box_pose(float((50 + object_position_x) * 0.001),float((-50 + object_position_y) * 0.001),float(((-160 + 1230) + object_position_z) * 0.001))
+      
       mc.pringles = mc.box_pose(object_position_x, object_position_y, object_position_z)
 
+
+      # mc.pringles.pose.position.x = (50 + object_position_x) / 1000
+      # mc.pringles.pose.position.y = (-50 + object_position_y) / 1000
+      # mc.pringles.pose.position.z = ((-160 + 1230) + object_position_z) / 1000
       if self.i > 0 and self.i < 20:
         if last_flag < object_flag:
           object_flag = last_flag
@@ -682,10 +731,17 @@ class GETOBJECT(State):
         last_flag = object_flag
       
 
+      # mc.pringles.pose.position.x = object_position_x / 1000
+      # mc.pringles.pose.position.y = object_position_y / 1000
+      # mc.pringles.pose.position.z = object_position_z / 1000
+
       rospy.loginfo(" %d Pringles x: %d, y: %d, z: %d, object_type: %d, object_flag: %d", self.i, mc.pringles.pose.position.x, mc.pringles.pose.position.y, mc.pringles.pose.position.z, object_flag, object_type)
+      # rospy.loginfo(" %d Position x: %d, y: %d, z: %d", self.i, object_position_x, object_position_y, object_position_z)
 
       rospy.sleep(0.5)
 
+      # rospy.loginfo("A")
+      # rospy.loginfo("Position x: %d, y: %d, depth: %d", object_position[0], object_position[1], object_position[2])
     self.i = 1
     if((mc.pringles.pose.position.x == 0.00) and (mc.pringles.pose.position.y == 0.00) and (mc.pringles.pose.position.z == 0.00)):
       return 'aborted'
@@ -787,6 +843,26 @@ if __name__ == '__main__':
 
     
   pick_place_pringles = StateMachine(outcomes=['succeeded','aborted'])
+  # x = object_position[0] - 0.006
+  # y = object_position[1]  
+  # z = object_position[2] - 1.23
+
+
+  #if object_position[0] and object_position[1] and object_position[2] != 0:
+  #global object_position_x, object_position_y, object_position_z
+
+  # x = (50 + mc.pringles.pose.position.x) / 1000
+  # y = (-50 + mc.pringles.pose.position.y) / 1000
+  # z = ((-160 + 1230) + mc.pringles.pose.position.z) / 1000
+
+  # x = (50 + object_position_x) / 1000
+  # y = (-50 + object_position_y) / 1000
+  # z = ((-160 + 1230) + object_position_z) / 1000
+
+
+  #mc.pringles = mc.box_pose(500, object_position_y, object_position_z)
+
+  #rospy.loginfo("pick_place_5 Target x: %d, y: %d, z: %d", object_position_x, object_position_y, object_position_z)
 
   with pick_place_pringles:
     StateMachine.add('DELAY1', delay,\
@@ -805,17 +881,26 @@ if __name__ == '__main__':
       transitions={'succeeded':'LIFTER UP','aborted':'aborted'})
     StateMachine.add('LIFTER UP', lifter_up,\
        transitions={'succeeded':'PLACE MOTION1','aborted':'aborted'})
-    StateMachine.add('PLACE MOTION1', MANIPULATE_MANUAL(0, 0, 0, direction="side"), \
+    StateMachine.add('PLACE MOTION1', MANIPULATE_MANUAL(-0.25, 0, 0, direction="side"), \
+      transitions={'succeeded':'PLACE MOTION2','aborted':'aborted'}) 
+    StateMachine.add('PLACE MOTION2', MANIPULATE_MANUAL(0, 0, 0, direction="side"), \
       transitions={'succeeded':'PLACE','aborted':'aborted'}) 
     StateMachine.add('PLACE', PLACE('pringles'),\
-      transitions={'succeeded':'PLACE MOTION2','aborted':'aborted'})
-    StateMachine.add('PLACE MOTION2', MANIPULATE_MANUAL(-0.15, -0.15, 0, direction="side"), \
+      transitions={'succeeded':'PLACE MOTION3','aborted':'aborted'})
+    StateMachine.add('PLACE MOTION3', MANIPULATE_MANUAL(-0.25, -0.10, 0, direction="side"), \
       transitions={'succeeded':'succeeded','aborted':'aborted'}) 
     
+
+
+  # else:
+  #   rospy.loginfo("ERROR Target x: %d, y: %d, z: %d", object_position[0], object_position[1], object_position[2])
+
+  #974, y: 95, z: -318
+
   scenario_play = StateMachine(outcomes=['succeeded','aborted'])
   with scenario_play:
     
-    StateMachine.add('MONITORING', MONITORING(-1),\
+    StateMachine.add('MONITORING', MONITORING(2),\
         transitions={'succeeded':'LIFTER DOWN','aborted':'aborted'})
     StateMachine.add('LIFTER DOWN', lifter_down,\
         transitions={'succeeded':'GO TO PAYMENT','aborted':'aborted'})
@@ -831,6 +916,10 @@ if __name__ == '__main__':
        transitions={'succeeded':'INITIALIZE','aborted':'aborted'})
     StateMachine.add('INITIALIZE', INIT_POSE(),\
       transitions={'succeeded':'SHELF4','aborted':'aborted'})
+    # StateMachine.add('REMOVE OBJECTS', UPDATE_OBJECTS('remove'),\
+    #   transitions={'succeeded':'GO TO SHELF','aborted':'aborted'})
+    # StateMachine.add('GO TO SHELF', go_to_shelf,\
+    #   transitions={'succeeded':'GO TO START POINT','aborted':'aborted'})
     StateMachine.add('SHELF4', GO_TO_PLACE(6),\
       transitions={'succeeded':'GO TO TABLE','aborted':'aborted'})
     StateMachine.add('GO TO START POINT', go_to_start_point,\
@@ -841,4 +930,3 @@ if __name__ == '__main__':
   sis.start()
   scenario_play.execute()
   sis.stop()
-
