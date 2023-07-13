@@ -3,7 +3,7 @@
 # This code refers to the example of Seed R7 ROS Repository
 # Modified by Muhammad Labiyb Afakh and Muhammad Ramadhan Hadi Setyawan
 
-# -*- coding: utf-8 -*-
+## -*- coding: utf-8 -*-
 import sys
 import time
 import rospy
@@ -151,14 +151,6 @@ class MoveitCommand:
 
     self.group = moveit_commander.MoveGroupCommander("rarm_with_torso")
     self.group.set_pose_reference_frame("base_link")
-
-    #self.box1 = self.box_pose(0.6,-0.3,0.36)
-    #self.box2 = self.box_pose(0.7,0.3,0.76)
-    #self.box3 = self.box_pose(0.4,-0.2,1)
-
-    # Custom
-    # self.box4 = self.box_pose(0.7,-0.2,0.77)
-    # self.box5 = self.box_pose(0.7,0.2,0.77)
 
     self.pringles = self.box_pose(0,0,0)
 
@@ -319,21 +311,13 @@ class MoveitCommand:
     return box_pose
 
   def add_objects(self):
-    self.scene.add_box("shelf1", self.box_pose(0.7,0,0.1), size=(0.75, 1.5, 0.1))
-    self.scene.add_box("shelf2", self.box_pose(0.7,0,0.55), size=(0.75, 1.5, 0.1))
-    # self.scene.add_box("shelf2", self.box_pose(0.8,0,0.7), size=(0.5, 1.0, 0.01))
-    # self.scene.add_box("shelf3", self.box_pose(0.8,0,1.1), size=(0.5, 1.0, 0.01))
+    #This objects are added to the scene to prevent to collision between manipulator, shelf, and table
+    self.scene.add_box("table1", self.box_pose(0.80,0,0.675), size=(0.45, 1.5, 0.03))
+    self.scene.add_box("table2", self.box_pose(0.80,0,1.5), size=(0.45, 1.5, 0.03))
+    
+    self.scene.add_box("shelf3", self.box_pose(-1.2,1.05,1), size=(1.3, 0.5, 0.01))
+    self.scene.add_box("shelf4", self.box_pose(-1.2,1.05,1.27), size=(1.3, 0.5, 0.03))
 
-    # self.scene.add_box("wall1", self.box_pose(0.8,0.5,0.75), size=(0.5, 0.01, 1.5))
-    # self.scene.add_box("wall2", self.box_pose(0.8,-0.5,0.75), size=(0.5, 0.01, 1.5))
-    # self.scene.add_box("box1", self.box1, size=(0.05, 0.1, 0.1))
-    # self.scene.add_box("box2", self.box2, size=(0.05, 0.05, 0.1))
-    # self.scene.add_box("box3", self.box3, size=(0.05, 0.05, 0.1))
-
-    #Custom
-    #self.scene.add_box("box4", self.box4, size=(0.05, 0.07, 0.1))
-    #self.scene.add_box("pringles", self.pringles, size=(0.07, 0.07, 0.1))
-    #self.scene.add_box("pringles", self.caffe_latte, size=(0.075, 0.075, 0.11))
     self.scene.add_box("pringles", self.pringles, size=(0.07, 0.07, 0.1))
     
 
@@ -381,16 +365,9 @@ class MoveitCommand:
 
 ###############################################################################################################
 
-#---------------------------------
 class MANIPULATE(State):
   def __init__(self,x,y,z,vel=0.5,direction="side"):
     State.__init__(self, outcomes=['succeeded','aborted'])
-    # global object_position_x, object_position_y, object_position_z
-
-    # self.x = object_position_x
-    # self.y = object_position_y
-    # self.z = object_position_z
-    # rospy.loginfo('INIT at ({},{},{})'.format(x,y,z))
 
     self.x_place = x
     self.y_place = y
@@ -403,36 +380,22 @@ class MANIPULATE(State):
   def execute(self, userdata):
     global object_position_x, object_position_y, object_position_z
 
-    # self.x = ((object_position_x) / 1000 ) + self.x_place
-    # self.y = ((object_position_y) / 1000 ) + self.y_place
-    # #self.z = ((-110 + 1230) + object_position_z) / 1000
-    # self.z = ((-250 + object_position_z) / 1000 ) + self.z_place
 
-    # self.x = 0.18 + (math.cos(0.524) * self.x + math.sin(0.524) * self.z)
-    # self.y = -0.08 + self.y
-    # self.z = 1.360 + (-math.sin(0.524) * self.x + math.cos(0.524) * self.z)
-
+    #It will change the object position in milimeter to meter
     self.x = (mc.pringles.pose.position.x) / 1000 
     self.y = (mc.pringles.pose.position.y) / 1000 
-    #self.z = ((-110 + 1230) + object_position_z) / 1000
     self.z = (mc.pringles.pose.position.z) / 1000 
 
-    self.x = (0.08 + (math.cos(0.506) * self.x + math.sin(0.506) * self.z)) + self.x_place
-    self.y = (-0.07 + self.y) + self.y_place
-    self.z = (1.075 + (-math.sin(0.506) * self.x + math.cos(0.506) * self.z)) + self.z_place
+    # These lines will transform the coordinate system of detected object to the coordinate system of manipulator
+    # The camera was rotated 29 degrees / 0.506 radians in y-axis
+    self.x = (0.09 + (math.cos(0.506) * self.x + math.sin(0.506) * self.z)) + self.x_place
+    self.y = (-0.05 + self.y) + self.y_place
+    self.z = (1.085 + (-math.sin(0.506) * self.x + math.cos(0.506) * self.z)) + self.z_place
 
-
-    # self.x = -self.x * math.sin(-0.523)
-    # self.y = self.y
-    # self.z = 1.230-self.x * math.cos(-0.523)
-
-    
-    #rospy.loginfo('Manipulate at ({},{},{}) in scale Pos {}'.format(mc.pringles.pose.position.x,mc.pringles.pose.position.y,mc.pringles.pose.position.z,self.vel))
-    rospy.loginfo('Manipulate at ({},{},{}) in scale Pos {}'.format(self.x,self.y,self.z,self.vel))
+   rospy.loginfo('Manipulate at ({},{},{}) in scale Pos {}'.format(self.x,self.y,self.z,self.vel))
 
     sleep(3)
 
-    # rospy.loginfo('Manipulate at ({},{},{}) in scale velocity {}'.format(self.x,self.y,self.z,self.vel))
     if(mc.set_grasp_position(self.x,self.y,self.z,self.vel,self.direction) 
       == 'succeeded'):return 'succeeded'
     else: return 'aborted'
@@ -461,16 +424,18 @@ class MANIPULATE_MANUAL(State):
       rospy.loginfo("PLACE OBJECT PRINGLES")
       self.x = 0.7 + self.x_place 
       self.y = -0.2 + self.y_place 
-      self.z = 1.10 + self.z_place 
+      self.z = 1.07 + self.z_place 
     else:
       rospy.loginfo("PLACE OBJECT COFFEE LATTE")
       self.x = 0.7 + self.x_place 
       self.y = 0.2 + self.y_place 
-      self.z = 1.10 + self.z_place 
+      self.z = 1.07 + self.z_place 
 
     rospy.loginfo('Manipulate Manual Target arm at ({},{},{}) in scale velocity {}'.format(self.x,self.y,self.z,self.vel))
     if(mc.set_grasp_position(self.x,self.y,self.z,self.vel,self.direction) 
-      == 'succeeded'):return 'succeeded'
+      == 'succeeded'):
+      rospy.sleep(2)
+      return 'succeeded'
     else: return 'aborted'
 
 ###############################################################################################################
@@ -558,7 +523,9 @@ class PICK(State):
 
   def execute(self, userdata):
     if(mc.attach_objects(self.object_name) == 'succeeded'):
-      if(hc.grasp()): return 'succeeded'
+      if(hc.grasp()): 
+        rospy.sleep(2)
+        return 'succeeded'
       else: return 'aborted'
     else: return 'aborted'
 
@@ -569,7 +536,9 @@ class PLACE(State):
 
   def execute(self, userdata):
     if(mc.detach_objects(self.object_name) == 'succeeded'):
-      if(hc.release()): return 'succeeded'
+      if(hc.release()): 
+        rospy.sleep(2)
+        return 'succeeded'
       else: return 'aborted'
     else: return 'aborted'
 
@@ -617,29 +586,7 @@ class MONITORING(State):
 
     return 'succeeded'
 
-# class WAITING(State):
-#   def __init__(self, timeout):
-#     State.__init__(self, outcomes=['succeeded', 'preempted'])
-#     self.current_time = rospy.get_rostime().from_seconds()
-#     self.timeout = rospy.get_rostime().from_seconds()
-  
-#   def execute(self, userdata):
-#     self.current_time = rospy.get_rostime().from_seconds()
-#     self.timeout = self.current_time + userdata*1000
-  
-#     while(self.timeout > 0):
-#       rospy.sleep(self.timeout)
-#       if self.preempt_requested():
-#         self.service_preempt()
-#         rospy.loginfo('Sleep')
-#         return 'preemted'
-#     return 'succeeded'
-#     # else: return 'aborted'
-
 class WAITING(State):
-  #Check NFC reader, 
-  # if the reader get NFC data, it will return 1
-  # then, it will wait until the object is detached and return 100 
   def __init__(self,delay):
     State.__init__(self, outcomes=['succeeded', 'aborted'])
     self.delay = delay
@@ -650,9 +597,11 @@ class WAITING(State):
     rospy.loginfo("Pringles Target x: %d, y: %d, z: %d", mc.pringles.pose.position.x, mc.pringles.pose.position.y, mc.pringles.pose.position.z)
     sleep(self.delay)
     return 'succeeded' 
-    # else: return 'aborted'
 
 class PAYMENT(State):
+  #Check NFC reader, 
+  # if the reader get NFC data, it will return 1
+  # then, it will wait until the object is detached and return 100 
   def __init__(self):
     State.__init__(self, outcomes=['succeeded', 'aborted'])
     self.subscriber = rospy.Subscriber('nfc_checker', Int8, self.callback)
@@ -660,7 +609,6 @@ class PAYMENT(State):
 
   def callback(self, data):
     self.flag_payment = data.data
-    # rospy.loginfo("Flag payment: %d", self.flag_payment)
 
   def execute(self, userdata):
     self.flag_payment = 0
@@ -670,24 +618,15 @@ class PAYMENT(State):
     
     self.flag_payment = 0
     return 'succeeded'
-    
-# class MOVEHEAD(State):
-#   def __init__(self, position):
-#     State.__init__(self, outcomes=['succeeded','aborted'])
-
-
-#   def execute(self, userdata):
-#     return super().execute(ud
-
 
     
 class GETOBJECT(State):
-  #This class will get the object position,
+  #This class will get the object position and type
 
   def __init__(self):
     State.__init__(self, outcomes=['succeeded','aborted'])
-    self.subscriber = rospy.Subscriber('object_detection', PoseStamped, self.callback)
-    self.subscriber_object = rospy.Subscriber('object_name', Int8, self.callback_object)
+    self.subscriber = rospy.Subscriber('object_detection', PoseStamped, self.callback) # It will subscribe the position of object detected
+    self.subscriber_object = rospy.Subscriber('object_name', Int8, self.callback_object) #It will subscribe the type of object topic
     self.i = 1
 
 
@@ -697,7 +636,6 @@ class GETOBJECT(State):
     object_position_x = data.pose.position.x
     object_position_y = data.pose.position.y
     object_position_z = data.pose.position.z
-    ##rospy.loginfo(" %d Position x: %d, y: %d, z: %d", self.i, object_position[0], object_position[1], object_position[2])
 
   def callback_object(self, data):
     global object_flag
@@ -712,16 +650,11 @@ class GETOBJECT(State):
 
     while self.i < 20:      
       self.i += 1
-      
-      # mc.pringles = mc.box_pose(object_position_x,object_position_y,object_position_z)
-      #mc.pringles = mc.box_pose(float((50 + object_position_x) * 0.001),float((-50 + object_position_y) * 0.001),float(((-160 + 1230) + object_position_z) * 0.001))
-      
+
+      #Pass the object position data to the manipulator
       mc.pringles = mc.box_pose(object_position_x, object_position_y, object_position_z)
 
-
-      # mc.pringles.pose.position.x = (50 + object_position_x) / 1000
-      # mc.pringles.pose.position.y = (-50 + object_position_y) / 1000
-      # mc.pringles.pose.position.z = ((-160 + 1230) + object_position_z) / 1000
+      #Check the object type by flag received.
       if self.i > 0 and self.i < 20:
         if last_flag < object_flag:
           object_flag = last_flag
@@ -729,19 +662,12 @@ class GETOBJECT(State):
         object_type = object_flag
 
         last_flag = object_flag
-      
-
-      # mc.pringles.pose.position.x = object_position_x / 1000
-      # mc.pringles.pose.position.y = object_position_y / 1000
-      # mc.pringles.pose.position.z = object_position_z / 1000
+    
 
       rospy.loginfo(" %d Pringles x: %d, y: %d, z: %d, object_type: %d, object_flag: %d", self.i, mc.pringles.pose.position.x, mc.pringles.pose.position.y, mc.pringles.pose.position.z, object_flag, object_type)
-      # rospy.loginfo(" %d Position x: %d, y: %d, z: %d", self.i, object_position_x, object_position_y, object_position_z)
 
       rospy.sleep(0.5)
 
-      # rospy.loginfo("A")
-      # rospy.loginfo("Position x: %d, y: %d, depth: %d", object_position[0], object_position[1], object_position[2])
     self.i = 1
     if((mc.pringles.pose.position.x == 0.00) and (mc.pringles.pose.position.y == 0.00) and (mc.pringles.pose.position.z == 0.00)):
       return 'aborted'
@@ -803,10 +729,14 @@ if __name__ == '__main__':
     StateMachine.add('MOVE5', GO_TO_PLACE(1),\
       transitions={'succeeded':'UP LIFTER','aborted':'aborted'})
     StateMachine.add('UP LIFTER', MOVE_LIFTER(0,0.9),\
+      transitions={'succeeded':'DELAY5S 1','aborted':'aborted'})
+    StateMachine.add('DELAY5S 1', delay5s,\
+      transitions={'succeeded':'DELAY5S 2','aborted':'aborted'})
+    StateMachine.add('DELAY5S 2', delay5s,\
       transitions={'succeeded':'PAYMENT','aborted':'aborted'})
     StateMachine.add('PAYMENT', PAYMENT(),\
-      transitions={'succeeded':'DELAY5S','aborted':'aborted'})
-    StateMachine.add('DELAY5S', delay5s,\
+      transitions={'succeeded':'DELAY5S 3','aborted':'aborted'})
+    StateMachine.add('DELAY5S 3', delay5s,\
       transitions={'succeeded':'succeeded','aborted':'aborted'})
 
   go_to_start_point = StateMachine(outcomes=['succeeded','aborted'])
@@ -843,26 +773,6 @@ if __name__ == '__main__':
 
     
   pick_place_pringles = StateMachine(outcomes=['succeeded','aborted'])
-  # x = object_position[0] - 0.006
-  # y = object_position[1]  
-  # z = object_position[2] - 1.23
-
-
-  #if object_position[0] and object_position[1] and object_position[2] != 0:
-  #global object_position_x, object_position_y, object_position_z
-
-  # x = (50 + mc.pringles.pose.position.x) / 1000
-  # y = (-50 + mc.pringles.pose.position.y) / 1000
-  # z = ((-160 + 1230) + mc.pringles.pose.position.z) / 1000
-
-  # x = (50 + object_position_x) / 1000
-  # y = (-50 + object_position_y) / 1000
-  # z = ((-160 + 1230) + object_position_z) / 1000
-
-
-  #mc.pringles = mc.box_pose(500, object_position_y, object_position_z)
-
-  #rospy.loginfo("pick_place_5 Target x: %d, y: %d, z: %d", object_position_x, object_position_y, object_position_z)
 
   with pick_place_pringles:
     StateMachine.add('DELAY1', delay,\
@@ -891,12 +801,6 @@ if __name__ == '__main__':
       transitions={'succeeded':'succeeded','aborted':'aborted'}) 
     
 
-
-  # else:
-  #   rospy.loginfo("ERROR Target x: %d, y: %d, z: %d", object_position[0], object_position[1], object_position[2])
-
-  #974, y: 95, z: -318
-
   scenario_play = StateMachine(outcomes=['succeeded','aborted'])
   with scenario_play:
     
@@ -915,11 +819,9 @@ if __name__ == '__main__':
     StateMachine.add('PICK and PLACE PRINGLES', pick_place_pringles,\
        transitions={'succeeded':'INITIALIZE','aborted':'aborted'})
     StateMachine.add('INITIALIZE', INIT_POSE(),\
+      transitions={'succeeded':'REMOVE OBJECTS','aborted':'aborted'})
+    StateMachine.add('REMOVE OBJECTS', UPDATE_OBJECTS('remove'),\
       transitions={'succeeded':'SHELF4','aborted':'aborted'})
-    # StateMachine.add('REMOVE OBJECTS', UPDATE_OBJECTS('remove'),\
-    #   transitions={'succeeded':'GO TO SHELF','aborted':'aborted'})
-    # StateMachine.add('GO TO SHELF', go_to_shelf,\
-    #   transitions={'succeeded':'GO TO START POINT','aborted':'aborted'})
     StateMachine.add('SHELF4', GO_TO_PLACE(6),\
       transitions={'succeeded':'GO TO TABLE','aborted':'aborted'})
     StateMachine.add('GO TO START POINT', go_to_start_point,\
@@ -930,3 +832,4 @@ if __name__ == '__main__':
   sis.start()
   scenario_play.execute()
   sis.stop()
+
