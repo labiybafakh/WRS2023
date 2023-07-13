@@ -66,7 +66,7 @@ rosrun wrs2023_object_detection object_detection.py
 rosrun wrs2023_queue_monitor monitor.py
 ```
 
-# Play the visualization using bag file.
+# Play the visualization using bag file (without a real robot).
 If u just want to run the visualization using a bag file,  you don't need to do step 2, 3, and 4 on installing packages. The robot will start to move when the bag file runs about 60 seconds, so please wait.
 ## 1. Run the navigation package.
 ```bash
